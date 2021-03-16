@@ -143,14 +143,43 @@ def capture_dht22_data(connection_id):
                 except TimeoutError:
                     print("Timout on sensor " + str(sensor))
                     log_data(connection_id, ids[sensor], 0, 0, None, cur_date, cur_time)
+                    prometheus_log(ids[sensor], 0, 0, None, cur_date, cur_time)
                 else:
                     print(result)
                     log_data(connection_id, ids[sensor], result['humidity'], result['temp_c'], None, cur_date, cur_time)
+                    prometheus_log(ids[sensor], result['humidity'], result['temp_c'], None, cur_date, cur_time)
                 pass
 
-            time.sleep(120)
+            time.sleep(15)
     except Error as error:
         print(error)
+
+
+def prometheus_log(sensor_id, humidity, temperature, pressure, cdate, ctime):
+    """
+    Logs the data in Prometheus Format as per: https://opensource.com/article/21/3/iot-measure-raspberry-pi
+    :param sensor_id:
+    :param humidity:
+    :param temperature:
+    :param pressure:
+    :param cdate:
+    :param ctime:
+    :return:
+    """
+
+    PROMETHEUS_LOG = "/home/pi/logs/metrics.prom"
+
+    metrics_out = open(PROMETHEUS_LOG, 'w+')
+    print('# HELP ambient_temperature temperature in Centigrade', flush=True, file=metrics_out)
+    print('# TYPE ambient_temperature gauge', flush=True, file=metrics_out)
+    print(f'temperature {temperature}', flush=True, file=metrics_out)
+    print('# HELP ambient_pressure something', flush=True, file=metrics_out)
+    print('# TYPE ambient_light gauge', flush=True, file=metrics_out)
+    print(f'ambient_pressure 0', flush=True, file=metrics_out)
+    print('# HELP ambient_humidity humidity in %RH', flush=True, file=metrics_out)
+    print('# TYPE ambient_humidity gauge', flush=True, file=metrics_out)
+    print(f'humidity {humidity}', flush=True, file=metrics_out)
+    metrics_out.close()
 
 
 def log_data(connection_id, sensor_id, humidity, temperature, pressure, cdate, ctime):
