@@ -134,51 +134,54 @@ def capture_dht22_data(connection_id):
             cur_date = time.strftime('%Y-%m-%d')
             cur_time = time.strftime('%H:%M')
 
+            results = []
             for sensor in range(0, len(sensors)):
                 try:
                     result = sensors[sensor].sample(samples=5, max_retries=5)
+                    results.append(result)
                     # as we are reading multiple sensors, introduce a little sleep between the readings.
                     # this seems to cut down on the number of timeouts and False status values.
                     time.sleep(2)
                 except TimeoutError:
                     print("Timout on sensor " + str(sensor))
+                    # Create some dummy values for logging purposes
+                    results.append({'temp_c': 0, 'temp_f': 0, 'humidity': 0, 'valid': False})
                     log_data(connection_id, ids[sensor], 0, 0, None, cur_date, cur_time)
-                    prometheus_log(ids[sensor], 0, 0, None, cur_date, cur_time)
                 else:
                     print(result)
                     log_data(connection_id, ids[sensor], result['humidity'], result['temp_c'], None, cur_date, cur_time)
-                    prometheus_log(ids[sensor], result['humidity'], result['temp_c'], None, cur_date, cur_time)
                 pass
 
-            time.sleep(15)
+            prometheus_log(results)
+            time.sleep(120)
     except Error as error:
         print(error)
 
 
-def prometheus_log(sensor_id, humidity, temperature, pressure, cdate, ctime):
+def prometheus_log(results):
     """
     Logs the data in Prometheus Format as per: https://opensource.com/article/21/3/iot-measure-raspberry-pi
-    :param sensor_id:
-    :param humidity:
-    :param temperature:
-    :param pressure:
-    :param cdate:
-    :param ctime:
+
+    Relies on node_exporter catching the file at least one per minute.
+
+    :param results: array of {'temp_c': 26.3, 'temp_f': 79.3, 'humidity': 38.9, 'valid': True}
     :return:
     """
 
     PROMETHEUS_LOG = "/home/pi/logs/metrics.prom"
 
     metrics_out = open(PROMETHEUS_LOG, 'w+')
-    print('# HELP ambient_temperature temperature in Centigrade', flush=True, file=metrics_out)
-    print('# TYPE ambient_temperature gauge', flush=True, file=metrics_out)
-    print(f'temperature {temperature}', flush=True, file=metrics_out)
-    print('# HELP ambient_pressure something', flush=True, file=metrics_out)
-    print('# TYPE ambient_light gauge', flush=True, file=metrics_out)
-    print(f'ambient_pressure 0', flush=True, file=metrics_out)
-    print('# HELP ambient_humidity humidity in %RH', flush=True, file=metrics_out)
-    print('# TYPE ambient_humidity gauge', flush=True, file=metrics_out)
-    print(f'humidity {humidity}', flush=True, file=metrics_out)
+    for i in range(0, len(results)):
+        print(f'# HELP temperature{i} Temperature in Centigrade', flush=True, file=metrics_out)
+        print(f'# TYPE temperature{i} gauge', flush=True, file=metrics_out)
+        print(f"temperature{i} {results[i]['temp_c']}", flush=True, file=metrics_out)
+        print(f'# HELP pressure{i} something', flush=True, file=metrics_out)
+        print(f'# TYPE pressure{i} gauge', flush=True, file=metrics_out)
+        print(f'pressure{i} 0', flush=True, file=metrics_out)
+        print(f'# HELP humidity{i} Humidity in %RH', flush=True, file=metrics_out)
+        print(f'# TYPE humidity{i} gauge', flush=True, file=metrics_out)
+        print(f"humidity{i} {results[i]['humidity']}", flush=True, file=metrics_out)
+
     metrics_out.close()
 
 
@@ -235,14 +238,12 @@ def main():
 
 if __name__ == '__main__':
     # TODO:
-    #
+    #   Switch to using native DHT22 interface rather than pigpio_dht
 
     try:
         main()
     except KeyboardInterrupt:
         print('Interrupted')
-        # TODO
-        #   We should really close the file in a safe manner.
         try:
             sys.exit(1)
         except SystemExit:
