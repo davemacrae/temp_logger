@@ -18,7 +18,7 @@ import pigpio
 DHT_PIN_1 = 4                       # GPIO PIN for Sensor 1
 DHT_PIN_2 = 17                      # GPIO PIN for Sensor 2
 
-DB_FILE = "sensor_log.db"
+DB_FILE = "/home/pi/logs/sensor_log.db"
 CREATE_SENSOR = "CREATE TABLE IF NOT EXISTS sensors (" \
                 "id integer PRIMARY KEY, " \
                 "name text NOT NULL, " \
