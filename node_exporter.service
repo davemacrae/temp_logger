@@ -3,10 +3,9 @@ Description=Node Exporter
 After=network-online.target
 
 [Service]
-User=pi
 Restart=on-failure
 
-ExecStart=node_exporter \
+ExecStart=/opt/node_exporter/node_exporter \
 	--collector.textfile.directory=/home/pi/logs \
 	--no-collector.arp \
 	--no-collector.bcache \
@@ -42,6 +41,9 @@ ExecStart=node_exporter \
 	--no-collector.uname \
 	--no-collector.vmstat \
 	--no-collector.xfs \
+	--no-collector.fibrechannel \
+	--no-collector.rapl \
+	--no-collector.udp_queues \
 	--no-collector.zfs
 
 [Install]

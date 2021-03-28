@@ -15,7 +15,6 @@ import pigpio
 
 # constants section
 
-DHT_PIN_1 = 4                       # GPIO PIN for Sensor 1
 DHT_PIN_2 = 17                      # GPIO PIN for Sensor 2
 
 DB_FILE = "/home/pi/logs/sensor_log.db"
@@ -217,8 +216,7 @@ def database_setup():
     if connection_id is not None:
         db_create_table(connection_id, CREATE_SENSOR)
         db_create_table(connection_id, CREATE_LOG)
-        db_add_sensor(connection_id, ('inside', "DHT22", DHT_PIN_1))
-        db_add_sensor(connection_id, ('outside', "DHT22", DHT_PIN_2))
+        db_add_sensor(connection_id, ('conservatory', "DHT22", DHT_PIN_2))
     else:
         print("database connection seems to have failed")
     return connection_id
